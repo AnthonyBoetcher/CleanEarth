@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GeoPin Trash</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
+
+
+
+</head>
+
+
+
+
+<body>
+  <h1>GeoPin Trash</h1>
+  <div id="map" style="height: 500px; width: 100%;"></div>
+  <input type="file" id="file-input" />
+  <button onclick="uploadImage()">Upload Image and Pin</button>
+ 
+ <script type="module">
+
+  // Import the functions you need from the SDKs you need CHANGE WHEN PRODUCTION MODE
+
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyAkx5BtmYGh5behXtWqm3eFGQHLTMGqpRA",
+    authDomain: "cleanearth-e1bb1.firebaseapp.com",
+    projectId: "cleanearth-e1bb1",
+    storageBucket: "cleanearth-e1bb1.firebasestorage.app",
+    messagingSenderId: "409893464943",
+    appId: "1:409893464943:web:42a027451aeec9cf94969a",
+    measurementId: "G-308REEZV4M"
+  };
+
+
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const storage = firebase.storage();
+    const db = firebase.firestore();
+
+    let map;
+    const initializeMap = () => {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 0, lng: 0 },
+        zoom: 2,
+      });
+
+      map.addListener("click", (event) => {
+        const coords = event.latLng.toJSON();
+        localStorage.setItem("selectedCoords", JSON.stringify(coords));
+        alert(`Selected Location: ${coords.lat}, ${coords.lng}`);
+      });
+    };
+
+    const uploadImage = () => {
+      const fileInput = document.getElementById("file-input");
+      if (fileInput.files.length === 0) {
+        alert("Please select an image to upload.");
+        return;
+      }
+      const file = fileInput.files[0];
+      const storageRef = storage.ref(`images/${file.name}`);
+      const coords = JSON.parse(localStorage.getItem("selectedCoords"));
+
+      storageRef.put(file).then((snapshot) => {
+        snapshot.ref.getDownloadURL().then((url) => {
+          db.collection("geopins").add({
+            coords,
+            imageUrl: url,
+          });
+          new google.maps.Marker({
+            position: coords,
+            map,
+            title: "Uploaded Image",
+          });
+          alert("Image uploaded and pinned to map.");
+        });
+      });
+    };
+
+    window.onload = initializeMap;
+  </script>
+</body>
+</html>
